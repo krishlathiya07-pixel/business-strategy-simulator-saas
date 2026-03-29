@@ -7,37 +7,42 @@ sdk: docker
 app_file: server.py
 pinned: false
 ---
-👉“Includes stochastic market dynamics and multi-objective reward optimization.”
+
 # 🏢 Business Strategy Simulation Environment
 
-An **OpenEnv-compliant** environment where an AI agent plays the role of a CEO, making quarterly strategic decisions to grow a company.
+> An **OpenEnv-compliant** real-world environment where an AI agent acts as CEO, making quarterly strategic decisions to grow a company. Features stochastic market dynamics and multi-objective reward optimization.
 
-Built for the **OpenEnv Hackathon — Round 1**.
+Built for the **OpenEnv Hackathon — Round 1** · [Live API Docs](https://ihere04u-business-strategy-env.hf.space/docs)
 
 ---
 
-## 🌍 Environment Description
+## 🌍 Why This Environment?
 
-The agent controls a company with the following state: revenue, costs, profit, market share, employees, customer satisfaction, marketing budget, R&D investment, and product quality.
+Business strategy is a genuine real-world task — companies live and die by quarterly decisions on hiring, marketing, pricing, and R&D. This environment models those decisions with:
 
-Each step = one business quarter. The agent chooses a strategic action, the market responds, and a reward is computed based on the task objective.
+- **Stochastic market dynamics** — random noise simulates real market unpredictability
+- **Interdependent state variables** — actions have cascading effects (e.g. cutting costs reduces quality, reducing satisfaction, reducing market share)
+- **Multi-objective trade-offs** — agents must balance short-term profit vs long-term growth
+- **Partial progress rewards** — dense reward signal every quarter, not just at episode end
 
 ---
 
 ## 🎯 Tasks
 
-| Task | Difficulty | Goal | Max Quarters |
-|------|-----------|------|-------------|
-| `survive` | Easy | Keep profit > 0 every quarter | 4 |
-| `grow_market_share` | Medium | Reach 20% market share | 8 |
-| `scale_profitably` | Hard | 2x revenue + satisfaction ≥ 0.8 | 12 |
+| Task | Difficulty | Goal | Max Quarters | Reward Formula |
+|------|-----------|------|-------------|----------------|
+| `survive` | Easy | Keep profit > 0 every quarter | 4 | `profitable_quarters / total_quarters` |
+| `grow_market_share` | Medium | Reach 20% market share | 8 | `min(market_share / 0.20, 1.0)` + early bonus |
+| `scale_profitably` | Hard | 2x revenue AND satisfaction ≥ 0.8 | 12 | `0.6 × revenue_score + 0.4 × satisfaction_score` |
 
 ---
 
 ## 🔧 Action Space
 
-| Action | Effect |
-|--------|--------|
+10 strategic actions, each with an optional `amount` parameter (default: $5,000):
+
+| Action | Primary Effect |
+|--------|----------------|
 | `increase_marketing` | ↑ Market share, ↑ Satisfaction, ↑ Costs |
 | `decrease_marketing` | ↓ Costs, ↓ Market share |
 | `hire_employees` | ↑ Revenue capacity, ↑ Costs |
@@ -46,10 +51,31 @@ Each step = one business quarter. The agent chooses a strategic action, the mark
 | `invest_in_rd` | ↑ Product quality, ↑ Costs |
 | `launch_product` | ↑ Revenue, ↑ Market share |
 | `expand_market` | ↑ Market share, ↑ Revenue |
-| `raise_prices` | ↑ Revenue, ↓ Satisfaction |
+| `raise_prices` | ↑ Revenue, ↓ Satisfaction, ↓ Market share |
 | `lower_prices` | ↓ Revenue, ↑ Satisfaction, ↑ Market share |
 
-Each action also takes an `amount` (float, default: 5000.0) representing the dollar investment.
+---
+
+## 👁️ Observation Space
+
+```json
+{
+  "revenue": 50000.0,
+  "costs": 35000.0,
+  "profit": 15000.0,
+  "market_share": 0.10,
+  "employees": 20,
+  "customer_satisfaction": 0.70,
+  "marketing_budget": 5000.0,
+  "rd_investment": 2000.0,
+  "product_quality": 0.65,
+  "quarter": 1,
+  "max_quarters": 4,
+  "done": false,
+  "reward": 0.0,
+  "message": "Q1: Profit=$15,000 | Market=10.0%"
+}
+```
 
 ---
 
@@ -57,13 +83,43 @@ Each action also takes an `amount` (float, default: 5000.0) representing the dol
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `POST` | `/reset` | Reset environment |
-| `POST` | `/step` | Take an action |
+| `GET` | `/health` | Health check — returns `{"status": "healthy"}` |
+| `GET` | `/metadata` | Environment metadata |
+| `GET` | `/schema` | Typed action/observation/state schemas |
+| `POST` | `/reset` | Reset environment for a task |
+| `POST` | `/step` | Take an action, advance one quarter |
 | `GET` | `/state` | Get current state |
-| `GET` | `/tasks` | List tasks + action schema |
-| `POST` | `/grader` | Grade completed episode |
-| `GET` | `/baseline` | Run baseline agent on all tasks |
+| `GET` | `/tasks` | List all tasks + action schema |
+| `POST` | `/grader` | Grade a completed episode |
+| `GET` | `/baseline` | Run rule-based baseline on all 3 tasks |
+| `POST` | `/mcp` | MCP JSON-RPC endpoint |
+
+---
+
+## 🏆 Reward Design
+
+All rewards are **partial progress signals** — no sparse binary end-of-episode rewards:
+
+- **survive**: `profitable_quarters / total_quarters` — scores every quarter
+- **grow_market_share**: `min(final_share / 0.20, 1.0)` + early completion bonus
+- **scale_profitably**: `0.6 × revenue_score + 0.4 × satisfaction_score` — weighted multi-objective
+
+Undesirable behaviors are penalized:
+- Bankruptcy (profit < -$50,000) → early termination
+- Over-hiring with no revenue → costs spiral punishes poor decisions
+- Cutting costs repeatedly → product quality degrades, reducing future revenue
+
+---
+
+## 📊 Baseline Scores
+
+Scores from the included rule-based baseline agent (`baseline.py`):
+
+| Task | Score | Notes |
+|------|-------|-------|
+| `survive` | 1.000 | Profitable all 4 quarters |
+| `grow_market_share` | 1.000 | Reached 30% (target: 20%) |
+| `scale_profitably` | 0.890 | Revenue $81K, satisfaction 0.82 |
 
 ---
 
@@ -73,10 +129,11 @@ Each action also takes an `amount` (float, default: 5000.0) representing the dol
 
 ```bash
 pip install -r requirements.txt
-python server.py
+python baseline.py      # verify logic
+python server.py        # start API server
 ```
 
-Visit: http://localhost:7860/docs (Swagger UI)
+Visit: http://localhost:7860/docs
 
 ### Docker
 
@@ -85,25 +142,29 @@ docker build -t business-strategy-env .
 docker run -p 7860:7860 business-strategy-env
 ```
 
-### Baseline
+### Inference (LLM Agent)
 
 ```bash
-python baseline.py
+export HF_TOKEN=your_token
+export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+export API_BASE_URL=https://api-inference.huggingface.co/v1
+export ENV_URL=https://ihere04u-business-strategy-env.hf.space
+python inference.py
 ```
 
 ---
 
-## 📋 Example Usage
+## 📋 Quick Example
 
 ```python
 import requests
 
-BASE = "http://localhost:7860"
+BASE = "https://ihere04u-business-strategy-env.hf.space"
 
 # Reset
 state = requests.post(f"{BASE}/reset", json={"task": "survive", "seed": 42}).json()
 
-# Play
+# Play 4 quarters
 for _ in range(4):
     state = requests.post(f"{BASE}/step", json={
         "task": "survive",
@@ -122,23 +183,14 @@ print("Final score:", score["score"])
 ## 📁 Project Structure
 
 ```
-business_strategy_env/
-├── environment.py     # Core simulation logic
-├── graders.py         # Task-specific graders (score 0.0–1.0)
-├── server.py          # FastAPI server (all OpenEnv endpoints)
+business-strategy-env/
+├── environment.py     # Core simulation logic + stochastic market dynamics
+├── graders.py         # Task-specific graders returning scores in [0.0, 1.0]
+├── server.py          # FastAPI server — all OpenEnv + additional endpoints
 ├── baseline.py        # Rule-based baseline agent
+├── inference.py       # LLM agent using OpenAI-compatible client
 ├── openenv.yaml       # OpenEnv spec
-├── Dockerfile         # Container config
+├── Dockerfile         # Container — deploys on HF Spaces (port 7860)
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-## 🏆 Reward Design
-
-- **survive**: `profitable_quarters / total_quarters`
-- **grow_market_share**: `min(market_share / 0.20, 1.0)` + early bonus
-- **scale_profitably**: `0.6 × revenue_score + 0.4 × satisfaction_score`
-
-All rewards are partial progress signals in `[0.0, 1.0]` — no sparse end rewards.
