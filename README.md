@@ -7,6 +7,7 @@ sdk: docker
 app_file: server.py
 pinned: false
 ---
+👉“Includes stochastic market dynamics and multi-objective reward optimization.”
 # 🏢 Business Strategy Simulation Environment
 
 An **OpenEnv-compliant** environment where an AI agent plays the role of a CEO, making quarterly strategic decisions to grow a company.
