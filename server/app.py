@@ -269,7 +269,9 @@ const chartRev=new Chart(document.getElementById('chartRevenue'),{
   ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
     plugins:{legend:{labels:{boxWidth:10,padding:12}}},
     scales:{x:{grid:{color:'#111c2a'},ticks:{maxTicksLimit:8}},
-            y:{grid:{color:'#111c2a'},ticks:{callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}}}}
+            y:{grid:{color:'#111c2a'},ticks:{callback:v=>v>=1000?'$'+(v/1000).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"0)+'k':'$'+v}}}}
 });
 
 const chartPie=new Chart(document.getElementById('chartPie'),{
@@ -277,7 +279,9 @@ const chartPie=new Chart(document.getElementById('chartPie'),{
     data:[10,25,40,25],backgroundColor:[GREEN,RED,BLUE,DIM],borderColor:'#080b0f',borderWidth:3,hoverOffset:8
   }]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},cutout:'62%',
     plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}},
-             tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed.toFixed(1)+'%'}}}}
+             tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1)+'%'}}}}
 });
 
 const chartBar=new Chart(document.getElementById('chartBar'),{
@@ -291,7 +295,9 @@ const chartBar=new Chart(document.getElementById('chartBar'),{
 });
 
 function fmt$(n){return'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0})}
-function fmtPct(n){return(n*100).toFixed(1)+'%'}
+function fmtPct(n){return(n*100).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1)+'%'}
 function fmtN(v){return Math.round((v||0)*100)}
 function rankStr(r){return['🥇','🥈','🥉'][Math.min(r-1,2)]||'#'+r}
 let env_history=[];
@@ -308,7 +314,9 @@ function updateUI(d){
   setV('s-qual',  fmtPct(d.product_quality||0),     'pos');
   setV('s-q',     'Q'+(d.quarter||0)+' / '+(d.max_quarters||0));
   setV('s-rank',  rankStr(d.market_rank||3));
-  setV('s-reward',(d.reward||0).toFixed(3),         d.reward>=0.7?'pos':'neu');
+  setV('s-reward',(d.reward||0).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"3),         d.reward>=0.7?'pos':'neu');
 
   document.getElementById('industry-row').innerHTML=
     '<span class="industry-pill">🏭 '+(d.industry||'unknown').replace('_',' ')+'</span>';
@@ -329,11 +337,25 @@ function updateUI(d){
     chartRev.update();
   }
   const you=(d.market_share||0)*100,c0=(comps[0]?.market_share||0)*100,c1=(comps[1]?.market_share||0)*100;
-  chartPie.data.datasets[0].data=[you.toFixed(1),c0.toFixed(1),c1.toFixed(1),Math.max(0,100-you-c0-c1).toFixed(1)];
+  chartPie.data.datasets[0].data=[you.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),c0.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),c1.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),Math.max(0,100-you-c0-c1).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1)];
   chartPie.update();
-  chartBar.data.datasets[0].data=[you.toFixed(1),fmtN(d.customer_satisfaction),fmtN(d.product_quality)];
-  chartBar.data.datasets[1].data=[c0.toFixed(1),60,60];
-  chartBar.data.datasets[2].data=[c1.toFixed(1),75,70];
+  chartBar.data.datasets[0].data=[you.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),fmtN(d.customer_satisfaction),fmtN(d.product_quality)];
+  chartBar.data.datasets[1].data=[c0.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),60,60];
+  chartBar.data.datasets[2].data=[c1.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1),75,70];
   chartBar.update();
 
   document.getElementById('history-body').innerHTML=[...env_history].reverse().map((row,idx)=>{
@@ -341,7 +363,9 @@ function updateUI(d){
     return'<tr class="'+cls+'"><td class="neu">Q'+row.quarter+'</td>'+
       '<td style="color:#aaa">'+(row.action||'').replace('_',' ')+'</td>'+
       '<td class="'+pc+'">'+fmt$(row.profit||0)+'</td>'+
-      '<td class="info">'+((row.market_share||0)*100).toFixed(1)+'%</td>'+
+      '<td class="info">'+((row.market_share||0)*100).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1)+'%</td>'+
       '<td>'+rankStr(row.market_rank||3)+'</td>'+
       '<td style="color:#586069;font-size:10px">'+(row.event||'—')+'</td></tr>';
   }).join('');

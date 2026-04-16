@@ -1,3 +1,7 @@
+const formatNumber = (value: any, digits = 2): string => {
+  const num = Number(value);
+  return isNaN(num) ? "0.00" : num.toFixed(digits);
+};
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -167,18 +171,18 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Financial Summary</h2>
               <div className={`text-xs font-bold px-2 py-1 rounded ${state.profit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                {state.profit >= 0 ? '+' : ''}{((state.profit / state.revenue) * 100).toFixed(1)}% Margin
+                {state.profit >= 0 ? '+' : ''}{formatNumber((state.profit / state.revenue) * 100)}% Margin
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4">
               <StatCard label="Total Revenue" value={`$${state.revenue.toLocaleString()}`} icon={<TrendingUp size={16} />} color="blue" />
               <StatCard label="Net Profit" value={`$${state.profit.toLocaleString()}`} icon={<Award size={16} />} color={state.profit >= 0 ? "emerald" : "rose"} />
-              <StatCard label="Market Share" value={`${(state.market_share * 100).toFixed(1)}%`} icon={<PieChartIcon size={16} />} color="indigo" />
+              <StatCard label="Market Share" value={`${formatNumber(state.market_share * 100)}%`} icon={<PieChartIcon size={16} />} color="indigo" />
             </div>
             <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-3 gap-2">
               <MiniStat label="Staff" value={state.employees} />
-              <MiniStat label="CSAT" value={`${(state.customer_satisfaction * 100).toFixed(0)}%`} />
-              <MiniStat label="Quality" value={`${(state.product_quality * 100).toFixed(0)}%`} />
+              <MiniStat label="CSAT" value={`${formatNumber(state.customer_satisfaction * 100)}%`} />
+              <MiniStat label="Quality" value={`${formatNumber(state.product_quality * 100)}%`} />
             </div>
           </div>
 
@@ -299,7 +303,7 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-6">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">You Hold</span>
-                <span className="text-3xl font-black text-slate-900">{(state.market_share * 100).toFixed(0)}%</span>
+                <span className="text-3xl font-black text-slate-900">{formatNumber(state.market_share * 100)}%</span>
               </div>
             </div>
           </ChartCard>
@@ -335,7 +339,7 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="py-4 text-right">
                         <span className={`text-[10px] font-black px-2 py-1 rounded-full ${row.reward >= 0.5 ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
-                          {row.reward.toFixed(2)}
+                          {formatNumber(row.reward)}
                         </span>
                       </td>
                     </tr>
@@ -366,7 +370,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-xs font-black text-slate-900">
-                    {entry.reward.toFixed(3)}
+                    {formatNumber(entry.reward)}
                   </div>
                 </div>
               )) : (
@@ -395,7 +399,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 mb-10">
                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                  <div className="text-[10px] font-black text-slate-400 uppercase mb-1">Final Score</div>
-                 <div className="text-2xl font-black text-blue-600">{state.reward?.toFixed(3)}</div>
+                 <div className="text-2xl font-black text-blue-600">{formatNumber(state.reward)}</div>
                </div>
                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                  <div className="text-[10px] font-black text-slate-400 uppercase mb-1">Rank</div>

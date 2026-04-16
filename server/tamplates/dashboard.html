@@ -361,7 +361,9 @@ const ACTION_EFFECTS = {
 };
 
 function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
-function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
+function fmtPct(n) { return (n * 100).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1) + '%'; }
 
 function initChart() {
   const ctx = document.getElementById('histChart').getContext('2d');
@@ -379,7 +381,9 @@ function initChart() {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { ticks: { font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', color: '#88878' }, grid: { color: 'rgba(128,128,128,.1)' } },
+        y: { ticks: { font: { size: 10 }, callback: v => '$' + (v/1000).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"0) + 'k', color: '#88878' }, grid: { color: 'rgba(128,128,128,.1)' } },
         x: { ticks: { font: { size: 10 }, color: '#888' }, grid: { display: false } }
       }
     }
@@ -415,7 +419,9 @@ function updateUI(prevState) {
   document.getElementById('m-proft-delta').textContent = prevState ? delta(profit, prevState.revenue - prevState.costs, fmt) : '—';
 
   document.getElementById('m-share').textContent = fmtPct(s.market_share);
-  document.getElementById('m-share-delta').textContent = prevState ? delta(s.market_share, prevState.market_share, v => (v*100).toFixed(1)+'pp') : '—';
+  document.getElementById('m-share-delta').textContent = prevState ? delta(s.market_share, prevState.market_share, v => (v*100).typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"1)+'pp') : '—';
 
   document.getElementById('m-sat').textContent = Math.round(s.customer_satisfaction * 100) + '%';
   document.getElementById('m-sat-sub').textContent = 'Employees: ' + (s.employees || 20);
@@ -431,7 +437,9 @@ function updateUI(prevState) {
   document.getElementById('q-label').textContent = 'Q' + q + ' / Q' + mq;
   document.getElementById('prog-label').textContent = 'Q' + q + ' of Q' + mq;
   document.getElementById('prog-fill').style.width = (q / mq * 100) + '%';
-  document.getElementById('score-display').textContent = 'Score: ' + totalScore.toFixed(2);
+  document.getElementById('score-display').textContent = 'Score: ' + totalScore.typeof item.score === "number"
+  ? item.score.toFixed(2)
+  : "0.00"2);
 
   if (s.done) {
     document.getElementById('feedback-msg').textContent = '🏁 Simulation complete! ' + getVerdict();
