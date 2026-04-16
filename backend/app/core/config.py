@@ -25,9 +25,14 @@ class Settings(BaseSettings):
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info: Any) -> Any:
-        # Check if DATABASE_URL is provided (common in Railway/Heroku)
         import os
+        # Prioritize DATABASE_URL from environment (Railway standard)
         db_url = os.getenv("DATABASE_URL") or v or "sqlite:///./sql_app.db"
+        
+        # Robust string check before calling .startswith
+        if not isinstance(db_url, str):
+            return db_url
+            
         if db_url.startswith("postgres://"):
             return db_url.replace("postgres://", "postgresql://", 1)
         return db_url
