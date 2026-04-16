@@ -16,6 +16,5 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Railway provides the PORT environment variable. 
-# We use a shell-style CMD to allow variable expansion.
-CMD uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+# Railway provides the PORT environment variable.
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
