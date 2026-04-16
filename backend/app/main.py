@@ -64,6 +64,24 @@ async def log_requests(request: Request, call_next):
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+@app.on_event("startup")
+async def startup_event():
+    """
+    Test database connection on startup
+    """
+    from sqlalchemy import text
+    from backend.app.db.session import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        # 🔥 TEST QUERY (SQLAlchemy version of SELECT NOW())
+        res = db.execute(text("SELECT NOW()")).fetchone()
+        logger.info(f"DB Connected ✅ {res}")
+    except Exception as err:
+        logger.error(f"DB Error ❌ {str(err)}")
+    finally:
+        db.close()
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to Business Strategy Simulator API Pro"}
