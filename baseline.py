@@ -8,7 +8,7 @@ Run directly:
 Or called from server.py /baseline endpoint.
 """
 
-from environment import BusinessStrategyEnv
+from server.environment import BusinessStrategyEnv
 from graders import run_grader, GRADERS
 
 

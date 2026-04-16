@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Business Strategy Simulator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+html, body {
+  zoom: 1 !important;
+  -ms-content-zooming: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+/* 3D Glassmorphism & Modern Google-like UI */
+html {
+  --glass-bg: rgba(255,255,255,0.18);
+  --glass-border: rgba(255,255,255,0.35);
+  --glass-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+  --main-gradient: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+  --accent-gradient: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+  --primary: #185FA5;
+  --secondary: #F1F5F9;
+  --font-sans: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+}
+body {
+  font-family: var(--font-sans);
+  background: var(--main-gradient);
+  min-height: 100vh;
+  color: #222;
+}
+.sim {
+  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 8px;
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  border-radius: 18px;
+  border: 1.5px solid var(--glass-border);
+  padding: 1.2rem 2rem;
+  backdrop-filter: blur(12px);
+}
+.task-select { display: flex; gap: 10px; }
+.task-btn {
+  font-size: 14px; padding: 7px 18px; border-radius: 12px; border: none;
+  background: var(--glass-bg);
+  color: #222; font-weight: 500;
+  box-shadow: 0 2px 8px 0 rgba(24,95,165,0.08);
+  transition: background .18s, color .18s, box-shadow .18s, transform .12s;
+}
+.task-btn.active, .task-btn:focus {
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: 0 4px 16px 0 rgba(24,95,165,0.18);
+  outline: none;
+  transform: translateY(-2px) scale(1.04);
+}
+.task-btn:hover:not(.active) {
+  background: #e0e7ff;
+  color: var(--primary);
+}
+.q-badge {
+  font-size: 15px; color: #fff; background: var(--primary);
+  padding: 7px 18px; border-radius: 12px; border: none;
+  box-shadow: 0 2px 8px 0 rgba(24,95,165,0.08);
+}
+.metrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 2rem;
+}
+.metric-card {
+  background: var(--glass-bg);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  border: 1.5px solid var(--glass-border);
+  padding: 22px 24px;
+  backdrop-filter: blur(10px);
+  transition: box-shadow .18s, transform .12s;
+}
+.metric-card:hover {
+  box-shadow: 0 8px 32px 0 rgba(24,95,165,0.18);
+  transform: translateY(-2px) scale(1.03);
+}
+.metric-label {
+  font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px;
+}
+.metric-value {
+  font-size: 28px; font-weight: 600; color: #222; letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(24,95,165,0.06);
+}
+.metric-value.pos { color: #0F6E56; }
+.metric-value.neg { color: #A32D2D; }
+.metric-sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+.middle {
+  display: grid; grid-template-columns: 1fr 340px; gap: 22px; margin-bottom: 2rem;
+}
+.chart-card {
+  background: var(--glass-bg);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  border: 1.5px solid var(--glass-border);
+  padding: 22px 24px;
+  backdrop-filter: blur(10px);
+}
+.chart-title {
+  font-size: 15px; font-weight: 600; color: #222; margin-bottom: 16px;
+}
+.chart-legend { display: flex; gap: 18px; margin-bottom: 12px; font-size: 12px; color: #888; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
+.right-col { display: flex; flex-direction: column; gap: 18px; }
+.comp-card, .news-card {
+  background: var(--glass-bg);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  border: 1.5px solid var(--glass-border);
+  padding: 18px 20px;
+  backdrop-filter: blur(10px);
+}
+.comp-title { font-size: 14px; font-weight: 600; color: #222; margin-bottom: 14px; }
+.comp-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+.comp-name { display: flex; align-items: center; gap: 8px; color: #222; font-weight: 600; }
+.comp-dot { width: 10px; height: 10px; border-radius: 50%; }
+.bar-wrap { height: 7px; background: #e0e7ff; border-radius: 4px; flex: 1; margin: 0 12px; }
+.bar-fill { height: 100%; border-radius: 4px; }
+.comp-pct { font-size: 12px; color: #888; min-width: 36px; text-align: right; }
+.news-title { font-size: 14px; font-weight: 600; color: #222; margin-bottom: 10px; }
+.news-item { font-size: 13px; color: #222; padding: 8px 0; border-bottom: 1px solid #e0e7ff; line-height: 1.5; display: flex; gap: 8px; }
+.news-item:last-child { border-bottom: none; }
+.news-tag { font-size: 11px; padding: 3px 10px; border-radius: 8px; white-space: nowrap; align-self: flex-start; margin-top: 2px; }
+.tag-warn { background: #FAEEDA; color: #854F0B; }
+.tag-good { background: #EAF3DE; color: #3B6D11; }
+.tag-bad { background: #FCEBEB; color: #A32D2D; }
+.tag-info { background: #E6F1FB; color: #185FA5; }
+.actions-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 2rem; }
+.act-btn {
+  background: var(--glass-bg);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px 0 rgba(24,95,165,0.08);
+  border: 1.5px solid var(--glass-border);
+  padding: 18px 8px 12px 8px;
+  cursor: pointer;
+  transition: background .18s, box-shadow .18s, transform .12s;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+}
+.act-btn:hover {
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: 0 8px 32px 0 rgba(24,95,165,0.18);
+  transform: translateY(-2px) scale(1.04);
+}
+.act-btn:active { transform: scale(0.97); }
+.act-icon { font-size: 22px; margin-bottom: 6px; }
+.act-label { font-size: 13px; color: #222; line-height: 1.3; }
+.act-effect { font-size: 11px; color: #888; margin-top: 4px; }
+.bottom-bar {
+  display: flex; align-items: center; justify-content: space-between; background: var(--glass-bg);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  border: 1.5px solid var(--glass-border);
+  padding: 16px 24px; font-size: 14px; color: #222; margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+}
+.progress-wrap { display: flex; align-items: center; gap: 14px; flex: 1; margin: 0 18px; }
+.progress-bar { flex: 1; height: 7px; background: #e0e7ff; border-radius: 4px; border: 1.5px solid var(--glass-border); }
+.progress-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width .4s; }
+.score { font-size: 18px; font-weight: 600; color: var(--primary); }
+.feedback { font-size: 14px; color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<div class="sim">
+  <h2 class="sr-only">Business Strategy Simulator — Interactive CEO Decision Dashboard</h2>
+
+  <div class="topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-size:15px; font-weight:500; color:var(--color-text-primary);">CEO Dashboard</span>
+      <span class="q-badge" id="q-label">Q1 / Q4</span>
+    </div>
+    <div class="task-select">
+      <button class="task-btn active" onclick="setTask('survive',4)">Survive</button>
+      <button class="task-btn" onclick="setTask('grow_market_share',8)">Grow market share</button>
+      <button class="task-btn" onclick="setTask('scale_profitably',12)">Scale profitably</button>
+    </div>
+    <button onclick="resetSim()" style="font-size:12px; padding:5px 12px; border-radius:var(--border-radius-md); border:0.5px solid var(--color-border-secondary); background:transparent; color:var(--color-text-secondary); cursor:pointer;">↺ Reset</button>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Revenue</div>
+      <div class="metric-value" id="m-revenue">$50,000</div>
+      <div class="metric-sub" id="m-rev-delta">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Profit</div>
+      <div class="metric-value pos" id="m-profit">$15,000</div>
+      <div class="metric-sub" id="m-proft-delta">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Market share</div>
+      <div class="metric-value" id="m-share">10.0%</div>
+      <div class="metric-sub" id="m-share-delta">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Satisfaction</div>
+      <div class="metric-value" id="m-sat">70%</div>
+      <div class="metric-sub" id="m-sat-sub">Employees: 20</div>
+    </div>
+  </div>
+
+  <div class="middle">
+    <div class="chart-card">
+      <div class="chart-title">Performance history</div>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:#185FA5"></span>Revenue</span>
+        <span><span class="legend-dot" style="background:#0F6E56"></span>Profit</span>
+        <span><span class="legend-dot" style="background:#854F0B"></span>Costs</span>
+      </div>
+      <div style="position:relative; width:100%; height:200px;">
+        <canvas id="histChart" role="img" aria-label="Line chart showing revenue, profit and costs history per quarter.">History chart</canvas>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="comp-card">
+        <div class="comp-title">Market positions</div>
+        <div class="comp-row">
+          <div class="comp-name"><span class="comp-dot" style="background:#185FA5"></span>You</div>
+          <div class="bar-wrap"><div class="bar-fill" id="bar-you" style="width:10%; background:#185FA5"></div></div>
+          <div class="comp-pct" id="pct-you">10%</div>
+        </div>
+        <div class="comp-row">
+          <div class="comp-name"><span class="comp-dot" style="background:#E24B4A"></span>RivalCorp</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:25%; background:#E24B4A"></div></div>
+          <div class="comp-pct">25%</div>
+        </div>
+        <div class="comp-row">
+          <div class="comp-name"><span class="comp-dot" style="background:#888780"></span>MegaCo</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:40%; background:#888780"></div></div>
+          <div class="comp-pct">40%</div>
+        </div>
+        <div style="margin-top:8px; padding-top:8px; border-top:0.5px solid var(--color-border-tertiary); font-size:11px; color:var(--color-text-tertiary);">
+          Quality: <span id="m-quality">65%</span> &nbsp;|&nbsp; Marketing: $<span id="m-mkt">5,000</span>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="news-title">Market events</div>
+        <div id="news-feed">
+          <div class="news-item"><span class="news-tag tag-info">Info</span>Game started. Make your first move.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions-grid">
+    <div class="act-btn" onclick="doAction('increase_marketing')">
+      <div class="act-icon">📣</div>
+      <div class="act-label">Increase marketing</div>
+      <div class="act-effect">↑ Share ↑ Cost</div>
+    </div>
+    <div class="act-btn" onclick="doAction('decrease_marketing')">
+      <div class="act-icon">📉</div>
+      <div class="act-label">Decrease marketing</div>
+      <div class="act-effect">↓ Cost ↓ Share</div>
+    </div>
+    <div class="act-btn" onclick="doAction('hire_employees')">
+      <div class="act-icon">👥</div>
+      <div class="act-label">Hire employees</div>
+      <div class="act-effect">↑ Revenue ↑ Cost</div>
+    </div>
+    <div class="act-btn" onclick="doAction('layoff_employees')">
+      <div class="act-icon">📋</div>
+      <div class="act-label">Layoff employees</div>
+      <div class="act-effect">↓ Cost ↓ Sat.</div>
+    </div>
+    <div class="act-btn" onclick="doAction('cut_costs')">
+      <div class="act-icon">✂️</div>
+      <div class="act-label">Cut costs</div>
+      <div class="act-effect">↓ Cost ↓ Quality</div>
+    </div>
+    <div class="act-btn" onclick="doAction('invest_in_rd')">
+      <div class="act-icon">🔬</div>
+      <div class="act-label">Invest in R&D</div>
+      <div class="act-effect">↑ Quality ↑ Cost</div>
+    </div>
+    <div class="act-btn" onclick="doAction('launch_product')">
+      <div class="act-icon">🚀</div>
+      <div class="act-label">Launch product</div>
+      <div class="act-effect">↑ Revenue ↑ Share</div>
+    </div>
+    <div class="act-btn" onclick="doAction('expand_market')">
+      <div class="act-icon">🌐</div>
+      <div class="act-label">Expand market</div>
+      <div class="act-effect">↑ Share ↑ Revenue</div>
+    </div>
+    <div class="act-btn" onclick="doAction('raise_prices')">
+      <div class="act-icon">💰</div>
+      <div class="act-label">Raise prices</div>
+      <div class="act-effect">↑ Revenue ↓ Sat.</div>
+    </div>
+    <div class="act-btn" onclick="doAction('lower_prices')">
+      <div class="act-icon">🏷️</div>
+      <div class="act-label">Lower prices</div>
+      <div class="act-effect">↑ Sat. ↓ Revenue</div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="score" id="score-display">Score: 0.00</div>
+    <div class="progress-wrap">
+      <span id="prog-label" style="white-space:nowrap;">Q1 of Q4</span>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:25%"></div></div>
+    </div>
+    <div class="feedback" id="feedback-msg">Make your first decision ↑</div>
+  </div>
+</div>
+
+<script>
+const BASE_URL = window.location.origin;
+
+let state = {
+  revenue: 50000, costs: 35000, profit: 15000,
+  market_share: 0.10, employees: 20, customer_satisfaction: 0.70,
+  marketing_budget: 5000, rd_investment: 2000, product_quality: 0.65,
+  quarter: 1, max_quarters: 4, done: false, reward: 0
+};
+let task = 'survive';
+let history = { revenue: [50000], profit: [15000], costs: [35000] };
+let totalScore = 0;
+let chart;
+let apiMode = false;
+
+const EVENTS = [
+  { text: 'Economic recession hits — consumer spending down.', tag: 'tag-bad', label: 'Recession' },
+  { text: 'Industry boom — demand surging across all sectors.', tag: 'tag-good', label: 'Boom' },
+  { text: 'Competitor price war erupts — margins under pressure.', tag: 'tag-warn', label: 'Price war' },
+  { text: 'Viral marketing moment — brand awareness soaring.', tag: 'tag-good', label: 'Viral' },
+  { text: 'Supply chain crisis — costs rising unexpectedly.', tag: 'tag-bad', label: 'Crisis' },
+  { text: 'Tech disruption reshapes the market landscape.', tag: 'tag-info', label: 'Disruption' },
+  { text: 'Talent shortage — hiring becoming more competitive.', tag: 'tag-warn', label: 'Talent' },
+  { text: 'Government subsidy announced for the sector.', tag: 'tag-good', label: 'Subsidy' },
+  { text: 'Consumer confidence surging — spending up.', tag: 'tag-good', label: 'Confidence' },
+  { text: 'Regulatory crackdown — compliance costs rising.', tag: 'tag-bad', label: 'Regulation' },
+];
+
+const ACTION_EFFECTS = {
+  increase_marketing: { revenue: 0, costs: 3000, market_share: 0.015, customer_satisfaction: 0.03, marketing_budget: 2000, product_quality: 0 },
+  decrease_marketing: { revenue: 0, costs: -2500, market_share: -0.01, customer_satisfaction: -0.02, marketing_budget: -2000, product_quality: 0 },
+  hire_employees: { revenue: 5000, costs: 4000, market_share: 0, customer_satisfaction: 0, employees: 5, product_quality: 0 },
+  layoff_employees: { revenue: 0, costs: -3000, market_share: 0, customer_satisfaction: -0.06, employees: -4, product_quality: 0 },
+  cut_costs: { revenue: 0, costs: -4000, market_share: 0, customer_satisfaction: -0.02, product_quality: -0.05 },
+  invest_in_rd: { revenue: 0, costs: 3500, market_share: 0, customer_satisfaction: 0, rd_investment: 1500, product_quality: 0.08 },
+  launch_product: { revenue: 7000, costs: 2000, market_share: 0.02, customer_satisfaction: 0.03, product_quality: 0.04 },
+  expand_market: { revenue: 5000, costs: 3000, market_share: 0.025, customer_satisfaction: 0, product_quality: 0 },
+  raise_prices: { revenue: 6000, costs: 0, market_share: -0.015, customer_satisfaction: -0.05, product_quality: 0 },
+  lower_prices: { revenue: -4000, costs: 0, market_share: 0.02, customer_satisfaction: 0.04, product_quality: 0 },
+};
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
+
+function initChart() {
+  const ctx = document.getElementById('histChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Q1'],
+      datasets: [
+        { label: 'Revenue', data: [50000], borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,.08)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },
+        { label: 'Profit', data: [15000], borderColor: '#0F6E56', backgroundColor: 'rgba(15,110,86,.08)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },
+        { label: 'Costs', data: [35000], borderColor: '#854F0B', backgroundColor: 'rgba(133,79,11,.05)', borderWidth: 1.5, tension: 0.3, pointRadius: 3, borderDash: [4,3] },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', color: '#88878' }, grid: { color: 'rgba(128,128,128,.1)' } },
+        x: { ticks: { font: { size: 10 }, color: '#888' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  const q = state.quarter;
+  chart.data.labels = Array.from({length: history.revenue.length}, (_,i) => 'Q' + (i+1));
+  chart.data.datasets[0].data = [...history.revenue];
+  chart.data.datasets[1].data = [...history.profit];
+  chart.data.datasets[2].data = [...history.costs];
+  chart.update();
+}
+
+function updateUI(prevState) {
+  const s = state;
+  const profit = s.revenue - s.costs;
+
+  const delta = (val, prev, fmtFn) => {
+    if (prev === undefined) return '—';
+    const d = val - prev;
+    if (Math.abs(d) < 1) return '—';
+    return (d > 0 ? '+' : '') + fmtFn(d);
+  };
+
+  document.getElementById('m-revenue').textContent = fmt(s.revenue);
+  document.getElementById('m-rev-delta').textContent = prevState ? delta(s.revenue, prevState.revenue, fmt) : '—';
+
+  const pEl = document.getElementById('m-profit');
+  pEl.textContent = fmt(profit);
+  pEl.className = 'metric-value ' + (profit >= 0 ? 'pos' : 'neg');
+  document.getElementById('m-proft-delta').textContent = prevState ? delta(profit, prevState.revenue - prevState.costs, fmt) : '—';
+
+  document.getElementById('m-share').textContent = fmtPct(s.market_share);
+  document.getElementById('m-share-delta').textContent = prevState ? delta(s.market_share, prevState.market_share, v => (v*100).toFixed(1)+'pp') : '—';
+
+  document.getElementById('m-sat').textContent = Math.round(s.customer_satisfaction * 100) + '%';
+  document.getElementById('m-sat-sub').textContent = 'Employees: ' + (s.employees || 20);
+
+  document.getElementById('m-quality').textContent = Math.round(s.product_quality * 100) + '%';
+  document.getElementById('m-mkt').textContent = Math.round(s.marketing_budget).toLocaleString();
+
+  const myPct = Math.min(s.market_share * 100, 100);
+  document.getElementById('bar-you').style.width = myPct + '%';
+  document.getElementById('pct-you').textContent = fmtPct(s.market_share);
+
+  const q = s.quarter; const mq = s.max_quarters;
+  document.getElementById('q-label').textContent = 'Q' + q + ' / Q' + mq;
+  document.getElementById('prog-label').textContent = 'Q' + q + ' of Q' + mq;
+  document.getElementById('prog-fill').style.width = (q / mq * 100) + '%';
+  document.getElementById('score-display').textContent = 'Score: ' + totalScore.toFixed(2);
+
+  if (s.done) {
+    document.getElementById('feedback-msg').textContent = '🏁 Simulation complete! ' + getVerdict();
+  }
+}
+
+function getVerdict() {
+  if (task === 'survive') return state.revenue - state.costs > 0 ? 'Profitable — survived!' : 'Bankrupt.';
+  if (task === 'grow_market_share') return state.market_share >= 0.20 ? 'Goal reached: 20% market share!' : 'Fell short of 20% market share.';
+  return state.revenue >= 100000 && state.customer_satisfaction >= 0.8 ? 'Scaled profitably!' : 'Did not fully scale.';
+}
+
+function addNews(text, tagClass, label) {
+  const feed = document.getElementById('news-feed');
+  const el = document.createElement('div');
+  el.className = 'news-item';
+  el.innerHTML = '<span class="news-tag ' + tagClass + '">' + label + '</span>' + text;
+  feed.insertBefore(el, feed.firstChild);
+  while (feed.children.length > 4) feed.removeChild(feed.lastChild);
+}
+
+function simulateStep(action) {
+  const prev = { ...state };
+  const fx = ACTION_EFFECTS[action] || {};
+  state.revenue = Math.max(0, state.revenue + (fx.revenue || 0) + (Math.random() - 0.45) * 2000);
+  state.costs = Math.max(0, state.costs + (fx.costs || 0) + (Math.random() - 0.5) * 500);
+  state.market_share = Math.min(0.70, Math.max(0.01, state.market_share + (fx.market_share || 0)));
+  state.customer_satisfaction = Math.min(1, Math.max(0.1, state.customer_satisfaction + (fx.customer_satisfaction || 0)));
+  state.employees = Math.max(5, (state.employees || 20) + (fx.employees || 0));
+  state.marketing_budget = Math.max(0, state.marketing_budget + (fx.marketing_budget || 0));
+  state.product_quality = Math.min(1, Math.max(0.1, state.product_quality + (fx.product_quality || 0)));
+  state.profit = state.revenue - state.costs;
+
+  const evtRoll = Math.random();
+  if (evtRoll < 0.45) {
+    const evt = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+    addNews(evt.text, evt.tag, evt.label);
+    if (evt.tag === 'tag-good') { state.revenue *= 1.05; state.market_share = Math.min(0.70, state.market_share * 1.03); }
+    if (evt.tag === 'tag-bad') { state.costs *= 1.06; state.customer_satisfaction = Math.max(0.1, state.customer_satisfaction - 0.04); }
+  } else {
+    addNews('Stable quarter — no major market disruptions.', 'tag-info', 'Stable');
+  }
+
+  const profit = state.revenue - state.costs;
+  totalScore += profit > 0 ? 1 : -1;
+
+  history.revenue.push(Math.round(state.revenue));
+  history.profit.push(Math.round(profit));
+  history.costs.push(Math.round(state.costs));
+
+  state.quarter++;
+  if (state.quarter > state.max_quarters) state.done = true;
+
+  updateUI(prev);
+  updateChart();
+  document.getElementById('feedback-msg').textContent = action.replace(/_/g,' ') + ' — ' + (profit > 0 ? 'profitable quarter.' : 'loss this quarter.');
+}
+
+async function doAction(action) {
+  if (state.done) return;
+  try {
+    const res = await fetch(BASE_URL + '/api/step', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, amount: 5000 })
+    });
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const prev = { ...state };
+    Object.assign(state, d);
+    state.profit = state.revenue - state.costs;
+    totalScore += d.reward || 0;
+    history.revenue.push(Math.round(state.revenue));
+    history.profit.push(Math.round(state.profit));
+    history.costs.push(Math.round(state.costs));
+    if (d.message) addNews(d.message, 'tag-info', 'Q' + (state.quarter - 1));
+    updateUI(prev);
+    updateChart();
+    document.getElementById('feedback-msg').textContent = d.message || (action.replace(/_/g,' ') + ' executed.');
+  } catch {
+    simulateStep(action);
+  }
+}
+
+async function resetSim() {
+  totalScore = 0;
+  history = { revenue: [50000], profit: [15000], costs: [35000] };
+  try {
+    const res = await fetch(BASE_URL + '/api/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task, seed: Math.floor(Math.random() * 10000) })
+    });
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    Object.assign(state, d);
+    state.profit = state.revenue - state.costs;
+  } catch {
+    state = { revenue: 50000, costs: 35000, profit: 15000, market_share: 0.10, employees: 20, customer_satisfaction: 0.70, marketing_budget: 5000, rd_investment: 2000, product_quality: 0.65, quarter: 1, max_quarters: task === 'survive' ? 4 : task === 'grow_market_share' ? 8 : 12, done: false, reward: 0 };
+    history = { revenue: [50000], profit: [15000], costs: [35000] };
+  }
+  document.getElementById('news-feed').innerHTML = '<div class="news-item"><span class="news-tag tag-info">Info</span>New game started. Make your first move.</div>';
+  document.getElementById('prog-fill').style.width = (1 / state.max_quarters * 100) + '%';
+  updateUI(null);
+  chart.data.labels = ['Q1'];
+  chart.data.datasets.forEach((ds, i) => { ds.data = [history.revenue[0], history.profit[0], history.costs[0]][i] !== undefined ? [[50000],[15000],[35000]][i] : [0]; });
+  chart.update();
+}
+
+function setTask(t, mq) {
+  task = t;
+  document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  resetSim();
+}
+
+initChart();
+updateUI(null);
+</script>
+
+</body>
+</html>

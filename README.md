@@ -1,18 +1,18 @@
 ---
-title: Business Strategy Env
+title: Business Simulator
 emoji: 💼
 colorFrom: blue
 colorTo: purple
 sdk: docker
-app_file: server.py
+app_file: server/app.py
 pinned: false
 ---
 
-# 🏢 Business Strategy Simulation Environment
+# 🏢 Business Simulator
 
 > An **OpenEnv-compliant** real-world environment where an AI agent acts as CEO, making quarterly strategic decisions to grow a company. Features stochastic market dynamics and multi-objective reward optimization.
 
-Built for the **OpenEnv Hackathon — Round 1** · [Live API Docs](https://ihere04u-business-strategy-env.hf.space/docs)
+Built for the **OpenEnv Hackathon — Round 1** · [Live Dashboard](https://ihere04u-business-simulator.hf.space) · [Live API Docs](https://ihere04u-business-simulator.hf.space/docs)
 
 ---
 
@@ -83,6 +83,7 @@ Business strategy is a genuine real-world task — companies live and die by qua
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET` | `/` | Business Simulator Dashboard UI — interactive web interface with live charts, competitor comparison, and simulation controls |
 | `GET` | `/health` | Health check — returns `{"status": "healthy"}` |
 | `GET` | `/metadata` | Environment metadata |
 | `GET` | `/schema` | Typed action/observation/state schemas |
@@ -128,19 +129,20 @@ Scores from the included rule-based baseline agent (`baseline.py`):
 ### Local
 
 ```bash
-pip install -r requirements.txt
-python baseline.py      # verify logic
-python server.py        # start API server
+pip install -e .
+server  # start the server
 ```
 
-Visit: http://localhost:7860/docs
+Visit: http://localhost:7860 (dashboard) or http://localhost:7860/docs (API docs)
 
 ### Docker
 
 ```bash
-docker build -t business-strategy-env .
-docker run -p 7860:7860 business-strategy-env
+docker build -t business-simulator .
+docker run -p 7860:7860 business-simulator
 ```
+
+Visit: http://localhost:7860 (dashboard) or http://localhost:7860/docs (API docs)
 
 ### Inference (LLM Agent)
 
@@ -148,7 +150,7 @@ docker run -p 7860:7860 business-strategy-env
 export HF_TOKEN=your_token
 export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
 export API_BASE_URL=https://api-inference.huggingface.co/v1
-export ENV_URL=https://ihere04u-business-strategy-env.hf.space
+export ENV_URL=https://ihere04u-business-simulator.hf.space
 python inference.py
 ```
 
@@ -159,7 +161,7 @@ python inference.py
 ```python
 import requests
 
-BASE = "https://ihere04u-business-strategy-env.hf.space"
+BASE = "https://ihere04u-business-simulator.hf.space"
 
 # Reset
 state = requests.post(f"{BASE}/reset", json={"task": "survive", "seed": 42}).json()
@@ -183,14 +185,17 @@ print("Final score:", score["score"])
 ## 📁 Project Structure
 
 ```
-business-strategy-env/
-├── environment.py     # Core simulation logic + stochastic market dynamics
-├── graders.py         # Task-specific graders returning scores in [0.0, 1.0]
-├── server.py          # FastAPI server — all OpenEnv + additional endpoints
-├── baseline.py        # Rule-based baseline agent
-├── inference.py       # LLM agent using OpenAI-compatible client
-├── openenv.yaml       # OpenEnv spec
-├── Dockerfile         # Container — deploys on HF Spaces (port 7860)
+business-simulator/
+├── server/
+│   ├── app.py          # FastAPI server with dashboard UI
+│   ├── environment.py  # Core simulation logic + stochastic market dynamics
+│   └── __init__.py     # Package init
+├── baseline.py         # Rule-based baseline agent
+├── inference.py        # LLM agent using OpenAI-compatible client
+├── graders.py          # Task-specific graders
+├── openenv.yaml        # OpenEnv spec
+├── Dockerfile          # Container — deploys on HF Spaces (port 7860)
+├── pyproject.toml      # Package configuration
 ├── requirements.txt
 └── README.md
 ```

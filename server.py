@@ -4,12 +4,14 @@ Implements full OpenEnv spec with typed Pydantic models.
 """
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
 import uvicorn
 
-from environment import BusinessStrategyEnv
+from server.environment import BusinessStrategyEnv
 from graders import run_grader, GRADERS
+
 
 app = FastAPI(
     title="Business Strategy Simulation Environment",
@@ -24,6 +26,18 @@ def get_env(task: str) -> BusinessStrategyEnv:
         _envs[task] = BusinessStrategyEnv(task=task)
     return _envs[task]
 
+DASHBOARD_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Business Strategy Dashboard</title>
+</head>
+<body>
+    <h1>Business Strategy Simulation Dashboard</h1>
+    <p>Welcome to the dashboard. This is a placeholder for the actual dashboard content.</p>
+</body>
+</html>
+"""
 
 # ─── Typed OpenEnv Models ─────────────────────────────────────────────────────
 
@@ -147,6 +161,34 @@ def state(task: str = "survive"):
     s.setdefault("reward", 0.0)
     return s
 
+# Shared state
+env = BusinessStrategyEnv(task="grow_market_share", seed=42)
+history = []
+
+@app.get("/api/state")
+def api_state():
+    return env.state()
+
+@app.post("/api/step")
+def api_step(req: StepRequest):
+    result = env.step(req.action, req.amount)
+    history.append(result)
+    return result
+
+@app.post("/api/reset")
+def api_reset(req: ResetRequest):
+    global env, history
+    env = BusinessStrategyEnv(task=req.task, seed=req.seed)
+    history = []
+    return env.state()
+
+@app.get("/api/history")
+def api_history():
+    return {"history": history}          
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    return 
 
 # ─── Additional Endpoints ─────────────────────────────────────────────────────
 
@@ -210,7 +252,7 @@ def baseline():
 
 
 if __name__ == "__main__":
-    uvicorn.run("server:main", host="0.0.0.0", port=7860, reload=False)
+    uvicorn.run("server:app", host="0.0.0.0", port=7860, reload=False)
     
 def main():
-    return app
+    uvicorn.run("server:app", host="0.0.0.0", port=7860, reload=False)
