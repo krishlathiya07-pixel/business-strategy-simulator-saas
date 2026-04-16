@@ -13,9 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Copy and make the start script executable
+RUN chmod +x start.sh
+
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Railway provides the PORT environment variable.
-# Use a simple shell string for CMD to ensure environment variable expansion.
-CMD alembic upgrade head && uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+# Use the start script as the entrypoint
+CMD ["/bin/sh", "start.sh"]
