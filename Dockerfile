@@ -1,16 +1,21 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install dependencies
+# Install system dependencies for psycopg2 and other packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source
 COPY . .
 
-# Expose port (HF Spaces uses 7860)
-EXPOSE 7860
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-# Run server
-CMD ["python", "server.py"]
+# Railway provides the PORT environment variable. 
+# We use a shell-style CMD to allow variable expansion.
+CMD uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
